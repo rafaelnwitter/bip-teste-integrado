@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { finalize } from 'rxjs/operators';
@@ -28,6 +28,7 @@ import {
 export class BeneficioListComponent implements OnInit {
   private readonly service = inject(BeneficioService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   beneficios: Beneficio[] = [];
   loading = true;
@@ -42,12 +43,21 @@ export class BeneficioListComponent implements OnInit {
   carregar(): void {
     this.loading = true;
     this.erro = '';
-    
+
     this.service.listar().pipe(
-      finalize(() => this.loading = false)
+      finalize(() => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      })
     ).subscribe({
-      next: (data) => this.beneficios = data,
-      error: () => this.erro = 'Erro ao carregar benefícios'
+      next: (data) => {
+        this.beneficios = data;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.erro = 'Erro ao carregar benefícios';
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -70,7 +80,10 @@ export class BeneficioListComponent implements OnInit {
         })
       ).subscribe({
         next: () => this.carregar(),
-        error: () => this.erro = 'Erro ao deletar'
+        error: () => {
+          this.erro = 'Erro ao deletar';
+          this.cdr.detectChanges();
+        }
       });
     }
   }
@@ -78,5 +91,6 @@ export class BeneficioListComponent implements OnInit {
   cancelarDelete(): void {
     this.dialogVisivel = false;
     this.idParaDeletar = null;
+    this.cdr.detectChanges();
   }
 }

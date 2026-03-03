@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
@@ -14,6 +14,7 @@ import { Beneficio, BeneficioService, LoadingComponent } from 'shared';
 export class TransferenciaComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(BeneficioService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   form!: FormGroup;
   beneficios: Beneficio[] = [];
@@ -34,12 +35,21 @@ export class TransferenciaComponent implements OnInit {
   carregarBeneficios(): void {
     this.loading = true;
     this.erro = '';
-    
+
     this.service.listar().pipe(
-      finalize(() => this.loading = false)
+      finalize(() => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      })
     ).subscribe({
-      next: (data) => this.beneficios = data,
-      error: () => this.erro = 'Erro ao carregar benefícios'
+      next: (data) => {
+        this.beneficios = data;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.erro = 'Erro ao carregar benefícios';
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -68,6 +78,7 @@ export class TransferenciaComponent implements OnInit {
       .subscribe({
         next: () => {
           this.sucesso = 'Transferência realizada com sucesso!';
+          this.cdr.detectChanges();
           this.form.reset();
           // carregarBeneficios() gerencia o loading
           this.carregarBeneficios();
@@ -80,6 +91,7 @@ export class TransferenciaComponent implements OnInit {
             (typeof body === 'string' && body) ||
             err.message ||
             'Erro ao realizar transferência';
+          this.cdr.detectChanges();
         },
       });
   }

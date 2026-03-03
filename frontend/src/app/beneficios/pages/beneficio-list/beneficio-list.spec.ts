@@ -158,7 +158,7 @@ describe('BeneficioListComponent (Shell)', () => {
 
       component.confirmarDelete();
 
-      expect(component.erro).toBe('Erro ao deletar');
+      expect(component.erro).toBe('Erro ao deletar benefício');
       expect(component.dialogVisivel).toBe(false);
       expect(component.loading).toBe(false);
     });
@@ -214,7 +214,7 @@ describe('BeneficioListComponent (Shell)', () => {
 
       component.confirmarDelete();
 
-      expect(component.erro).toBe('Erro ao deletar');
+      expect(component.erro).toBe('Erro ao deletar benefício');
     });
   });
 });
