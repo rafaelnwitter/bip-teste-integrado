@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import com.example.backend.dto.BeneficioDTO;
+import com.example.backend.dto.TransferDTO;
 import com.example.backend.model.Beneficio;
 import com.example.backend.repository.BeneficioRepository;
 import org.springframework.http.HttpStatus;
@@ -62,5 +63,48 @@ public class BeneficioService {
                     HttpStatus.NOT_FOUND, "Beneficio não encontrado: " + id));
         existente.setAtivo(false);
         repository.save(existente);
+    }
+
+    /**
+     * Transferência de valor entre dois benefícios.
+     * Replica a lógica corrigida do EJB com:
+     * - Validação de valor positivo
+     * - Lock pessimista (PESSIMISTIC_WRITE) para evitar race conditions
+     * - Verificação de saldo suficiente
+     * - Rollback automático via @Transactional em caso de exceção
+     */
+    public void transferir(TransferDTO dto) {
+        if (dto.fromId().equals(dto.toId())) {
+            throw new IllegalArgumentException("Origem e destino devem ser diferentes");
+        }
+
+        // Lock pessimista em ordem consistente (menor ID primeiro) para evitar deadlock
+        Long firstId = Math.min(dto.fromId(), dto.toId());
+        Long secondId = Math.max(dto.fromId(), dto.toId());
+
+        repository.findByIdForUpdate(firstId)
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Beneficio não encontrado: " + firstId));
+        repository.findByIdForUpdate(secondId)
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Beneficio não encontrado: " + secondId));
+
+        // Agora busca as entidades já lockadas
+        Beneficio from = repository.findById(dto.fromId())
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Beneficio origem não encontrado: " + dto.fromId()));
+        Beneficio to = repository.findById(dto.toId())
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Beneficio destino não encontrado: " + dto.toId()));
+
+        if (from.getValor().compareTo(dto.valor()) < 0) {
+            throw new IllegalStateException("Saldo insuficiente no benefício: " + dto.fromId());
+        }
+
+        from.setValor(from.getValor().subtract(dto.valor()));
+        to.setValor(to.getValor().add(dto.valor()));
+
+        repository.save(from);
+        repository.save(to);
     }
 }
