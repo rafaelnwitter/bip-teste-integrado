@@ -36,7 +36,7 @@ export class TransferenciaComponent implements OnInit {
     this.service.listar().pipe(
       finalize(() => this.loading = false)
     ).subscribe({
-      next: (data) => this.beneficios = data,
+      next: (data: Beneficio[]) => this.beneficios = data,
       error: () => this.erro = 'Erro ao carregar benefícios',
     });
   }
@@ -51,19 +51,27 @@ export class TransferenciaComponent implements OnInit {
       return;
     }
 
+    // Validação de saldo insuficiente
+    const saldoOrigem = this.getValor(fromId);
+    if (valor > saldoOrigem) {
+      this.erro = `Saldo insuficiente. Disponível: R$ ${saldoOrigem.toFixed(2)}`;
+      return;
+    }
+
     this.loading = true;
     this.erro = '';
     this.sucesso = '';
 
     this.service.transferir({ fromId, toId, valor })
-      .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: () => {
           this.sucesso = 'Transferência realizada com sucesso!';
           this.form.reset();
+          // carregarBeneficios() gerencia o loading
           this.carregarBeneficios();
         },
         error: (err) => {
+          this.loading = false;
           const body = err.error;
           this.erro =
             (typeof body === 'object' && body?.erro) ||
