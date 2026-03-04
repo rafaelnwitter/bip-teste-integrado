@@ -32,13 +32,28 @@ Solução fullstack completa em camadas para gestão de benefícios, com CRUD e 
 ### 1. Banco de Dados
 
 ```bash
-# Subir o PostgreSQL via Docker
-docker-compose up -d
+# Subir somente o PostgreSQL via Docker
+docker-compose up -d db
 
 # (Opcional) Executar scripts manualmente
 psql -h localhost -U admin -d backend_db -f backend-module/src/main/resources/db/schema.sql
 psql -h localhost -U admin -d backend_db -f backend-module/src/main/resources/db/seed.sql
 ```
+
+Para subir **PostgreSQL + backend** via Docker (backend exposto em `http://localhost:8082`):
+
+```bash
+docker-compose up -d
+```
+
+> Observação: o backend está configurado para **rodar por padrão com H2 (arquivo local)**,
+> então você consegue subir a aplicação mesmo sem Postgres.
+> Se você quiser usar o Postgres do `docker-compose`, defina as variáveis de ambiente antes de rodar o backend:
+>
+> - `SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/backend_db`
+> - `SPRING_DATASOURCE_USERNAME=admin`
+> - `SPRING_DATASOURCE_PASSWORD=admin123`
+> - `SPRING_DATASOURCE_DRIVER=org.postgresql.Driver` (opcional)
 
 > O Spring Boot está configurado com `ddl-auto=update`, então as tabelas serão criadas automaticamente ao iniciar o backend.
 > Além disso, o backend agora executa `backend-module/src/main/resources/db/schema.sql` e `backend-module/src/main/resources/db/seed.sql` automaticamente no startup.
@@ -48,16 +63,18 @@ psql -h localhost -U admin -d backend_db -f backend-module/src/main/resources/db
 ### 2. Backend (Spring Boot)
 
 ```bash
-cd backend-module
-
-# Compilar e rodar os testes
-mvn clean install
+# Compilar o projeto (módulos ejb-module + backend-module)
+mvn clean package
 
 # Executar a aplicação
+cd backend-module
+
 mvn spring-boot:run
 ```
 
 O backend estará disponível em: `http://localhost:8085`
+
+> No Docker Compose, o backend fica disponível em `http://localhost:8082`.
 
 ### 3. Frontend (Angular)
 
