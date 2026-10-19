@@ -5,6 +5,8 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      MFE_BENEFICIOS_REMOTE: http://localhost:4201/remoteEntry.js
     steps:
       - uses: actions/checkout@v4
 
@@ -41,3 +43,6 @@ jobs:
 
       - name: Build Docker image (backend)
         run: docker build -t bip-backend:ci .
+
+      - name: Validate Docker Compose
+        run: POSTGRES_PASSWORD=ci-password docker compose config --quiet
