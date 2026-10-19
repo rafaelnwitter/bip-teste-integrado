@@ -21,8 +21,6 @@ public class BeneficioEjbService {
             throw new IllegalArgumentException("IDs de origem e destino não podem ser iguais");
         }
 
-        // Lock in a consistent order (lower id first) to avoid deadlocks
-        // in concurrent opposite transfers (A->B and B->A).
         Long lowerId = fromId.compareTo(toId) < 0 ? fromId : toId;
         Long higherId = fromId.compareTo(toId) < 0 ? toId : fromId;
 
@@ -41,6 +39,5 @@ public class BeneficioEjbService {
 
         from.setValor(from.getValor().subtract(amount));
         to.setValor(to.getValor().add(amount));
-        // dirty checking — em.merge() não necessário em entidades managed
     }
 }

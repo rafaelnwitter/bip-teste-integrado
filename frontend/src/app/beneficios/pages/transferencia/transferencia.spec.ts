@@ -147,7 +147,6 @@ describe('TransferenciaComponent (Shell)', () => {
 
       component.transferir();
 
-      // listar was called once on init + once after transfer
       expect(beneficioService.listar).toHaveBeenCalledTimes(2);
     });
 

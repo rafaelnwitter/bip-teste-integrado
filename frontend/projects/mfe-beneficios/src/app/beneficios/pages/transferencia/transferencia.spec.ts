@@ -110,9 +110,9 @@ describe('TransferenciaComponent', () => {
 
     it('should validate insufficient balance', () => {
       component.form.patchValue({
-        fromId: 3, // Beneficio with 50.00
+        fromId: 3,
         toId: 2,
-        valor: 100 // More than available
+        valor: 100
       });
 
       component.transferir();
@@ -135,7 +135,7 @@ describe('TransferenciaComponent', () => {
 
       expect(beneficioService.transferir).toHaveBeenCalledWith(expectedRequest);
       expect(component.sucesso).toBe('Transferência realizada com sucesso!');
-      expect(component.form.pristine).toBe(true); // Form should be reset
+      expect(component.form.pristine).toBe(true);
     });
 
     it('should handle transfer errors', () => {

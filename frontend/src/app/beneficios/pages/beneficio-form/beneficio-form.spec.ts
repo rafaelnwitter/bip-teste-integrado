@@ -123,7 +123,6 @@ describe('BeneficioFormComponent (Shell)', () => {
       it('should use isInvalid helper correctly', () => {
         const nomeControl = component.form.get('nome');
 
-        // Not touched yet, so not invalid even though required
         expect(component.isInvalid('nome')).toBe(false);
 
         nomeControl?.markAsTouched();
@@ -193,7 +192,6 @@ describe('BeneficioFormComponent (Shell)', () => {
       it('should set loading true during save', () => {
         beneficioService.criar.mockReturnValue(of({} as Beneficio));
 
-        // After synchronous observable resolves, loading will be false
         component.salvar();
         expect(component.loading).toBe(false);
       });

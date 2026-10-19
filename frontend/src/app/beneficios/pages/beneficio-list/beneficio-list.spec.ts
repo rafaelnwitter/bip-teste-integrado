@@ -86,11 +86,8 @@ describe('BeneficioListComponent (Shell)', () => {
     it('should set loading state during request', () => {
       component.loading = false;
 
-      // Loading should become true when carregar is called
-      // (it gets set then unset by finalize)
       component.carregar();
 
-      // After sync observable completes, loading should be false
       expect(component.loading).toBe(false);
     });
 

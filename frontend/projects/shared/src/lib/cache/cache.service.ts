@@ -11,7 +11,6 @@ export class CacheService {
   private cache = new Map<string, CacheEntry<unknown>>();
   private inFlightRequests = new Map<string, Observable<unknown>>();
   
-  // Tempo padrão de expiração: 30 segundos
   private defaultTTL = 30000;
 
   /**
@@ -21,21 +20,18 @@ export class CacheService {
    * @param ttl Tempo de vida do cache em ms (padrão: 30s)
    */
   get<T>(key: string, request: () => Observable<T>, ttl: number = this.defaultTTL): Observable<T> {
-    // Verificar se há dados em cache válidos
     const cached = this.cache.get(key) as CacheEntry<T> | undefined;
     if (cached && Date.now() - cached.timestamp < ttl) {
       console.log(`[Cache] Hit: ${key}`);
       return of(cached.data);
     }
 
-    // Verificar se já há uma requisição em andamento para esta chave
     const inFlight = this.inFlightRequests.get(key) as Observable<T> | undefined;
     if (inFlight) {
       console.log(`[Cache] Reusing in-flight request: ${key}`);
       return inFlight;
     }
 
-    // Fazer nova requisição e cachear
     console.log(`[Cache] Miss: ${key} - Fetching from server`);
     const observable = request().pipe(
       tap((data) => {

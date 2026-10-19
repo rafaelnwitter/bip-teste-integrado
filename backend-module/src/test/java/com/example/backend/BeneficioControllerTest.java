@@ -102,7 +102,6 @@ class BeneficioControllerTest {
         mockMvc.perform(delete("/api/v1/beneficios/" + id))
                 .andExpect(status().isNoContent());
 
-        // confirma soft delete — ativo = false
         mockMvc.perform(get("/api/v1/beneficios"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
@@ -130,8 +129,6 @@ class BeneficioControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    // --- Testes de Transferência ---
-
     @Test
     void deveTransferirComSucesso() throws Exception {
         Beneficio b2 = new Beneficio();
@@ -158,7 +155,6 @@ class BeneficioControllerTest {
                         .content(json))
                 .andExpect(status().isOk());
 
-        // Verifica saldos após transferência
         mockMvc.perform(get("/api/v1/beneficios/" + fromId))
                 .andExpect(jsonPath("$.valor").value(700.00));
 

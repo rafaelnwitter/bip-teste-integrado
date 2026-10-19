@@ -16,7 +16,6 @@
     </properties>
 
     <dependencies>
-        <!-- Jakarta EE API (provided pelo WebSphere/Liberty) -->
         <dependency>
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-api</artifactId>

@@ -19,7 +19,6 @@ export class BeneficioService {
   private readonly http = inject(HttpClient);
   private readonly cache = inject(CacheService);
 
-  // TTL de 60 segundos para a lista
   private readonly listTTL = 60000;
 
   listar(): Observable<Beneficio[]> {
@@ -72,7 +71,6 @@ export class BeneficioService {
     );
   }
 
-  // Força atualização do cache
   invalidateCache(): void {
     this.cache.invalidateByPrefix('beneficios:');
   }

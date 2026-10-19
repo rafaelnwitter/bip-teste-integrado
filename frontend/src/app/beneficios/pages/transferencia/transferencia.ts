@@ -63,7 +63,6 @@ export class TransferenciaComponent implements OnInit {
       return;
     }
 
-    // Validação de saldo insuficiente
     const saldoOrigem = this.getValor(fromId);
     if (valor > saldoOrigem) {
       this.erro = `Saldo insuficiente. Disponível: R$ ${saldoOrigem.toFixed(2)}`;
@@ -80,7 +79,6 @@ export class TransferenciaComponent implements OnInit {
           this.sucesso = 'Transferência realizada com sucesso!';
           this.cdr.detectChanges();
           this.form.reset();
-          // carregarBeneficios() gerencia o loading
           this.carregarBeneficios();
         },
         error: (err) => {

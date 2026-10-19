@@ -164,7 +164,6 @@ describe('BeneficioFormComponent (MFE)', () => {
     it('should use isInvalid helper correctly', () => {
       const nomeControl = component.form.get('nome');
 
-      // Not touched yet
       expect(component.isInvalid('nome')).toBe(false);
 
       nomeControl?.markAsTouched();
@@ -270,7 +269,6 @@ describe('BeneficioFormComponent (MFE)', () => {
 
       component.salvar();
 
-      // After synchronous observable finalize, loading is false
       expect(component.loading).toBe(false);
     });
 
@@ -280,7 +278,6 @@ describe('BeneficioFormComponent (MFE)', () => {
 
       component.ngOnInit();
 
-      // After synchronous observable, loading is false
       expect(component.loading).toBe(false);
     });
   });
