@@ -7,13 +7,7 @@ const webpack = require('webpack');
 const mfeBeneficiosRemote =
   process.env.MFE_BENEFICIOS_REMOTE || 'http://localhost:4201/remoteEntry.js';
 
-module.exports = withModuleFederationPlugin({
-  plugins: [
-    new webpack.DefinePlugin({
-      'process.env.MFE_BENEFICIOS_REMOTE': JSON.stringify(mfeBeneficiosRemote),
-    }),
-  ],
-
+const moduleFederationConfig = withModuleFederationPlugin({
   remotes: {
     mfeBeneficios: mfeBeneficiosRemote,
   },
@@ -31,3 +25,13 @@ module.exports = withModuleFederationPlugin({
     'rxjs': { singleton: true }
   },
 });
+
+module.exports = {
+  ...moduleFederationConfig,
+  plugins: [
+    ...moduleFederationConfig.plugins,
+    new webpack.DefinePlugin({
+      'process.env.MFE_BENEFICIOS_REMOTE': JSON.stringify(mfeBeneficiosRemote),
+    }),
+  ],
+};
