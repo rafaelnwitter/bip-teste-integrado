@@ -1,6 +1,9 @@
 import { Routes } from '@angular/router';
 import { loadRemoteModule } from '@angular-architects/module-federation';
 
+const mfeBeneficiosRemote =
+  process.env.MFE_BENEFICIOS_REMOTE || 'http://localhost:4201/remoteEntry.js';
+
 const localRoutes: Routes = [
   {
     path: '',
@@ -26,8 +29,7 @@ const localRoutes: Routes = [
 ];
 
 function loadMfeRoutes(): Promise<Routes> {
-  // Quick ping to check if MFE is available before attempting to load it
-  return fetch('http://localhost:4201/remoteEntry.js', {
+  return fetch(mfeBeneficiosRemote, {
     method: 'HEAD',
     mode: 'cors',
     signal: AbortSignal.timeout(500),
@@ -35,7 +37,7 @@ function loadMfeRoutes(): Promise<Routes> {
     .then(() =>
       loadRemoteModule({
         type: 'module',
-        remoteEntry: 'http://localhost:4201/remoteEntry.js',
+        remoteEntry: mfeBeneficiosRemote,
         exposedModule: './BeneficiosModule',
       }).then((m) => m.beneficioRoutes as Routes)
     )
