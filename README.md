@@ -15,9 +15,9 @@ Solução fullstack completa em camadas para gestão de benefícios, com CRUD e 
 | Camada | Tecnologia | Descrição |
 |--------|-----------|-----------|
 | **Database** | PostgreSQL 16 | Banco de dados relacional com schema e dados iniciais |
-| **EJB Module** | Jakarta EE (Stateless EJB) | Lógica de negócio de transferência com locking pessimista |
+| **EJB Module** | Jakarta Persistence | Lógica de negócio de transferência com locking pessimista |
 | **Backend** | Spring Boot 3.2 + JPA | API REST com CRUD, validações e integração com EJB |
-| **Frontend** | Angular 21 + Module Federation | Interface de usuário SPA com micro-frontend |
+| **Frontend** | Angular 21 | Interface de usuário SPA |
 
 ## 🚀 Como Executar
 
@@ -32,62 +32,57 @@ Solução fullstack completa em camadas para gestão de benefícios, com CRUD e 
 ### 1. Banco de Dados
 
 ```bash
-# Subir somente o PostgreSQL via Docker
-docker-compose up -d db
+docker compose up -d db
 
-# (Opcional) Executar scripts manualmente
 psql -h localhost -U admin -d backend_db -f backend-module/src/main/resources/db/schema.sql
 psql -h localhost -U admin -d backend_db -f backend-module/src/main/resources/db/seed.sql
 ```
 
-Para subir **PostgreSQL + backend** via Docker (backend exposto em `http://localhost:8082`):
+Para subir **PostgreSQL + backend** via Docker (backend exposto em `http://localhost:8085`):
 
 ```bash
-docker-compose up -d
+cp .env.example .env
+docker compose up -d
 ```
 
 > Observação: o backend está configurado para **rodar por padrão com H2 (arquivo local)**,
 > então você consegue subir a aplicação mesmo sem Postgres.
-> Se você quiser usar o Postgres do `docker-compose`, defina as variáveis de ambiente antes de rodar o backend:
+> Se você quiser usar o Postgres do `docker compose`, defina as variáveis de ambiente antes de rodar o backend:
 >
 > - `SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/backend_db`
 > - `SPRING_DATASOURCE_USERNAME=admin`
-> - `SPRING_DATASOURCE_PASSWORD=admin123`
+> - `POSTGRES_PASSWORD=<defina-no-ambiente>`
 > - `SPRING_DATASOURCE_DRIVER=org.postgresql.Driver` (opcional)
 
-> O Spring Boot está configurado com `ddl-auto=update`, então as tabelas serão criadas automaticamente ao iniciar o backend.
+> Para um desafio ou ambiente local, `ddl-auto=update` é um atalho conveniente para manter o schema atualizado automaticamente.
+> Em produção, prefira migrations versionadas e uma estratégia de DDL controlada, como `validate`.
 > Além disso, o backend agora executa `backend-module/src/main/resources/db/schema.sql` e `backend-module/src/main/resources/db/seed.sql` automaticamente no startup.
 > **Importante:** no Docker, scripts em `/docker-entrypoint-initdb.d` só rodam na **primeira** inicialização do volume.
-> Se o volume já existe, remova-o com `docker-compose down -v` ou rode os scripts manualmente.
+> Se o volume já existe, os scripts de inicialização não são executados novamente.
+> Não use `docker compose down -v` para trocar a senha, pois isso apaga os dados.
 
 ### 2. Backend (Spring Boot)
 
 ```bash
-# Compilar o projeto (módulos ejb-module + backend-module)
 mvn clean package
 
-# Executar a aplicação
 cd backend-module
-
 mvn spring-boot:run
 ```
 
 O backend estará disponível em: `http://localhost:8085`
 
-> No Docker Compose, o backend fica disponível em `http://localhost:8082`.
+> A mesma porta `8085` é usada localmente e no Docker Compose.
 
 ### 3. Frontend (Angular)
 
 ```bash
 cd frontend
 
-# Instalar dependências
 npm install
 
-# Compilar a biblioteca shared
 ng build shared
 
-# Executar o app principal
 ng serve
 ```
 
@@ -152,16 +147,17 @@ O `BeneficioEjbService` original possuía as seguintes vulnerabilidades:
 
 ### Correções aplicadas:
 
-- ✅ Validação de valor positivo (`amount > 0`)
+- ✅ Validação de valor informado e positivo (`amount != null` e `amount > 0`)
+- ✅ Validação de IDs informados e diferentes
 - ✅ Lock pessimista (`LockModeType.PESSIMISTIC_WRITE`) para evitar race conditions
 - ✅ Verificação de saldo antes da transferência
-- ✅ Rollback automático via `@TransactionAttribute(REQUIRED)`
+- ✅ Rollback automático via `@Transactional` no serviço Spring que integra o EJB
 - ✅ Validação de existência dos benefícios origem e destino
+- ✅ Ordenação dos locks por ID para evitar deadlocks em transferências concorrentes e opostas
+- ✅ Atualização das entidades gerenciadas por dirty checking, sem `merge()` desnecessário
 
-No backend Spring Boot, a mesma lógica é replicada com:
-- Lock pessimista via `@Lock(PESSIMISTIC_WRITE)` no repository
-- Ordenação de locks por ID para evitar deadlocks
-- `@Transactional` para rollback automático
+No backend Spring Boot, o serviço integra o `BeneficioEjbService` dentro de uma transação
+`@Transactional`, garantindo rollback automático quando uma validação ou operação falha.
 
 ## 🧪 Testes
 
@@ -189,9 +185,9 @@ ng test mfe-beneficios
 
 ```
 bip-teste-integrado/
-├── db/                          # Scripts SQL
-│   ├── backend-module/src/main/resources/db/schema.sql  # Criação da tabela BENEFICIO
-│   └── backend-module/src/main/resources/db/seed.sql    # Dados iniciais
+├── backend-module/src/main/resources/db/  # Scripts SQL
+│   ├── schema.sql              # Criação da tabela BENEFICIO
+│   └── seed.sql                 # Dados iniciais
 ├── ejb-module/                  # Módulo EJB (lógica de transferência)
 │   └── src/main/java/.../BeneficioEjbService.java
 ├── backend-module/              # Backend Spring Boot
@@ -209,7 +205,7 @@ bip-teste-integrado/
 │       ├── mfe-beneficios/      # Micro-frontend de benefícios
 │       └── shared/              # Biblioteca compartilhada
 ├── docs/                        # Documentação do desafio
-├── docker-compose.yml           # PostgreSQL via Docker
+├── docker-compose.yml           # PostgreSQL e backend via Docker Compose
 └── README.md                    # Este arquivo
 ```
 
@@ -219,18 +215,33 @@ bip-teste-integrado/
 
 | Propriedade | Valor Padrão | Descrição |
 |-------------|-------------|-----------|
-| `server.port` | `8085` | Porta do backend |
+| `server.port` | `8085` | Porta única do backend, local e Docker |
 | `spring.datasource.url` | `jdbc:postgresql://localhost:5432/backend_db` | URL do banco (configurável via `SPRING_DATASOURCE_URL`) |
 | `spring.datasource.username` | `admin` | Usuário do banco (configurável via `SPRING_DATASOURCE_USERNAME`) |
-| `spring.datasource.password` | `admin123` | Senha do banco (configurável via `SPRING_DATASOURCE_PASSWORD`) |
-| `spring.jpa.hibernate.ddl-auto` | `update` | Estratégia de DDL |
+| `spring.datasource.password` | Variável de ambiente | Senha do banco via `POSTGRES_PASSWORD`; não manter credenciais no README |
+| `spring.jpa.hibernate.ddl-auto` | `update` | Atalho para desafio/desenvolvimento; em produção, usar migrations e DDL controlado |
 
 ### Docker Compose
 
-O `docker-compose.yml` sobe o PostgreSQL:
+O `docker-compose.yml` sobe o PostgreSQL e o backend:
 
 ```bash
-docker-compose up -d     # Iniciar
-docker-compose down       # Parar
-docker-compose down -v    # Parar e remover volumes
+docker compose up -d     # Iniciar
+docker compose down       # Parar
+docker compose down -v    # Parar e remover volumes
 ```
+
+Para trocar a senha sem apagar o volume `postgres_data`, altere a senha do
+usuário existente, atualize `POSTGRES_PASSWORD` no `.env` com o mesmo valor e
+recrie apenas o backend:
+
+```bash
+docker compose exec -it db psql -U admin -d backend_db -c '\password admin'
+# Atualize POSTGRES_PASSWORD no .env com o mesmo valor informado no prompt.
+docker compose up -d --no-deps --force-recreate backend
+```
+
+Alterar somente o `.env` não altera a senha de um banco já inicializado:
+`POSTGRES_PASSWORD` da imagem oficial é aplicado apenas na primeira criação do
+volume. Use `docker compose down -v` somente para uma recriação intencional do
+banco, pois esse comando remove os dados persistidos.
